@@ -1,0 +1,59 @@
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Dependencies (regenerable via npm/pip)
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.Python
+build/
+develop-eggs/
+dist/
+
+# Build artifacts
+.next/
+out/
+.cache/
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Database
+db.sqlite3
+*.db
+*.sqlite
+
+# User uploads
+media/
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Django
+*.log
+local_settings.py
+
+# Test reports
+.coverage
+htmlcov/
+report.html
+
+# Temporary files
+*.tmp
+temp/
+.temp/
