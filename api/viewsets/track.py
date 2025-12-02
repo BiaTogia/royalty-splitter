@@ -5,8 +5,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from backend.models import Track
-from backend.royalty_service import distribute_royalty_for_track
+from backend.models import Track, StreamData
+from backend.royalty_service import distribute_royalty_for_track, distribute_royalty_from_streams
+from django.utils import timezone
 from api.serializers.track import TrackSerializer
 
 
@@ -34,7 +35,8 @@ class TrackViewSet(viewsets.ModelViewSet):
     """
     serializer_class = TrackSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     pagination_class = TrackPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['genre', 'owner']
@@ -143,3 +145,39 @@ class TrackViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def add_streams_and_distribute(self, request, pk=None):
+        """
+        Increment streams for a track and distribute earnings for the new streams.
+
+        Request body options:
+        - add_streams: integer (number of streams to add). If provided, a StreamData row will be created.
+        - platform: optional string (platform name)
+
+        Only the track owner or staff may call this.
+        """
+        track = self.get_object()
+        user = request.user
+        if track.owner != user and not user.is_staff:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        add_streams = request.data.get('add_streams')
+        platform = request.data.get('platform', 'manual')
+
+        if add_streams is not None:
+            try:
+                add_streams = int(add_streams)
+                if add_streams <= 0:
+                    raise ValueError
+            except Exception:
+                return Response({'error': 'Invalid add_streams value'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create a StreamData record for the increment
+            StreamData.objects.create(track=track, platform=platform, stream_count=add_streams, date_recorded=timezone.now().date())
+
+        try:
+            result = distribute_royalty_from_streams(track)
+            return Response(result)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

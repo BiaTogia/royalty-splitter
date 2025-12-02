@@ -100,9 +100,9 @@ class TrackSerializer(serializers.ModelSerializer):
         model = Track
         fields = [
             'id', 'title', 'duration', 'genre', 'release_date', 'nft_id',
-            'owner', 'owner_email', 'streams', 'splits', 'file', 'royalties', 'payout_amount'
+            'owner', 'owner_email', 'streams', 'splits', 'file', 'royalties', 'payout_amount', 'processed_streams', 'rate_per_stream'
         ]
-        read_only_fields = ['id', 'owner_email', 'streams', 'royalties', 'release_date']
+        read_only_fields = ['id', 'owner_email', 'streams', 'royalties', 'release_date', 'processed_streams']
 
     def validate_title(self, value):
         """Sanitize track title"""

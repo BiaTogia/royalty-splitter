@@ -90,6 +90,10 @@ class Track(models.Model):
     owner = models.ForeignKey(UserAccount, on_delete=models.SET_NULL, null=True, related_name="tracks")
     # Uploader-defined total payout amount (in USD)
     payout_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Total amount to distribute to collaborators")
+    # Total streams already processed (paid out) -> used to compute delta payouts
+    processed_streams = models.BigIntegerField(default=0)
+    # Optional per-track rate (USD per stream). If null, use global default.
+    rate_per_stream = models.DecimalField(max_digits=8, decimal_places=6, null=True, blank=True)
 
     def __str__(self):
         return self.title
